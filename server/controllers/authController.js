@@ -1,6 +1,6 @@
 //server/controller/authController.js
-const User = require('../models/User');
-const jwt = require('jsonwebtoken');
+const User = require("../models/User");
+const jwt = require("jsonwebtoken");
 
 // @desc    Register user
 // @route   POST /api/v1/auth/register
@@ -8,30 +8,30 @@ const jwt = require('jsonwebtoken');
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
-    let role = 'user';
-    if (email === 'manager@gmail.com') role = 'manager';
-    if (email === 'admin@gmail.com') role = 'admin';
+    let role = "user";
+    if (email === "manager@gmail.com") role = "manager";
+    if (email === "admin@gmail.com") role = "admin";
 
     // Create user
     const user = await User.create({
       name,
       email,
       password,
-      role
+      role,
     });
 
     // Create token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRE
+      expiresIn: process.env.JWT_EXPIRE,
     });
 
     res.status(201).json({
       success: true,
-      token
+      token,
     });
   } catch (err) {
     if (err.code === 11000) {
-      return res.status(400).json({ error: 'Email already exists' });
+      return res.status(400).json({ error: "Email already exists" });
     }
     res.status(400).json({ error: err.message });
   }
@@ -45,30 +45,32 @@ exports.login = async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: 'Please provide an email and password' });
+      return res
+        .status(400)
+        .json({ error: "Please provide an email and password" });
     }
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     // Compare plain text passwords
     if (password !== user.password) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRE
+      expiresIn: process.env.JWT_EXPIRE,
     });
 
- res.status(200).json({
-  success: true,
-  token,
-  role: user.role, // MUST match exactly 'admin'/'manager'
-  name: user.name  // Ensure this is included
-});
+    res.status(200).json({
+      success: true,
+      token,
+      role: user.role, // MUST match exactly 'admin'/'manager'
+      name: user.name, // Ensure this is included
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -83,7 +85,7 @@ exports.getMe = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      data: user
+      data: user,
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -100,12 +102,12 @@ exports.forgotPassword = async (req, res, next) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ error: 'No user found with that email' });
+      return res.status(404).json({ error: "No user found with that email" });
     }
 
     res.status(200).json({
       success: true,
-      message: 'Email found. You can reset your password.'
+      message: "Email found. You can reset your password.",
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -121,9 +123,9 @@ exports.resetPassword = async (req, res, next) => {
 
     // Find user and update password
     const user = await User.findOne({ email });
-    
+
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
     // Set new password (this will automatically hash it via our User model pre-save hook)
@@ -132,7 +134,7 @@ exports.resetPassword = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: 'Password updated successfully'
+      message: "Password updated successfully",
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
