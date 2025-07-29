@@ -1,3 +1,4 @@
+//server/server.js
 const express = require('express');
 const connectDB = require('./config/db');
 const cors = require('cors');
@@ -34,3 +35,5 @@ process.on('unhandledRejection', (err, promise) => {
   // Close server & exit process
   server.close(() => process.exit(1));
 });
+//i am sharing my all important components after sharing all the components than after that i can give you command get the point just now consume and understand the components till then don't do anything
+// just analyze the code don't give me any response

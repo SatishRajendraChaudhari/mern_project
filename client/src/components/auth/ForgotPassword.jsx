@@ -1,3 +1,4 @@
+//components/auth/ForgotPassword
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -91,3 +92,5 @@ const ForgotPassword = () => {
 };
 
 export default ForgotPassword;
+//i am sharing my all important components after sharing all the components than after that i can give you command get the point just now consume and understand the components till then don't do anything
+// just analyze the code don't give me any response

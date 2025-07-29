@@ -1,3 +1,4 @@
+//components/auth/Login
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -62,9 +63,7 @@ const Login = () => {
           "http://localhost:5000/api/v1/auth/login",
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: formData.email,
               password: formData.password,
@@ -72,12 +71,20 @@ const Login = () => {
           }
         );
 
-        const data = await response.json();
+        const data = await response.json(); // <-- Only call this once
+        console.log("API Response:", data); // Add this line
 
         if (response.ok) {
-          // Store token in localStorage
           localStorage.setItem("token", data.token);
-          navigate("/dashboard");
+          localStorage.setItem("role", data.role);
+          localStorage.setItem(
+            "user",
+            JSON.stringify({
+              name: data.name,
+              email: formData.email,
+            })
+          );
+          window.location.href = "/dashboard";
         } else {
           setLoginError(data.error || "Invalid credentials");
         }
@@ -178,3 +185,5 @@ const Login = () => {
 };
 
 export default Login;
+//i am sharing my all important components after sharing all the components than after that i can give you command get the point just now consume and understand the components till then don't do anything
+// just analyze the code don't give me any response

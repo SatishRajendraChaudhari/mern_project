@@ -1,3 +1,4 @@
+//server/controller/authController.js
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
@@ -7,12 +8,16 @@ const jwt = require('jsonwebtoken');
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
+    let role = 'user';
+    if (email === 'manager@gmail.com') role = 'manager';
+    if (email === 'admin@gmail.com') role = 'admin';
 
     // Create user
     const user = await User.create({
       name,
       email,
-      password
+      password,
+      role
     });
 
     // Create token
@@ -58,10 +63,12 @@ exports.login = async (req, res, next) => {
       expiresIn: process.env.JWT_EXPIRE
     });
 
-    res.status(200).json({
-      success: true,
-      token
-    });
+ res.status(200).json({
+  success: true,
+  token,
+  role: user.role, // MUST match exactly 'admin'/'manager'
+  name: user.name  // Ensure this is included
+});
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -131,3 +138,5 @@ exports.resetPassword = async (req, res, next) => {
     res.status(400).json({ error: err.message });
   }
 };
+//i am sharing my all important components after sharing all the components than after that i can give you command get the point just now consume and understand the components till then don't do anything
+// just analyze the code don't give me any response
