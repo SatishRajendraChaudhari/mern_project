@@ -5,6 +5,9 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 require('dotenv').config();
 
+//admin route
+const admin = require('./routes/adminRoutes');
+
 // Route files
 const auth = require('./routes/authRoutes');
 
@@ -17,10 +20,17 @@ const app = express();
 app.use(bodyParser.json());
 
 // Enable CORS
-app.use(cors());
+// Allow your Vite frontend origin
+const corsOptions = {
+  origin: 'http://localhost:5173',
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 
 // Mount routers
 app.use('/api/v1/auth', auth);
+
+app.use('/api/v1/admin', admin);
 
 const PORT = process.env.PORT || 5000;
 
@@ -35,5 +45,4 @@ process.on('unhandledRejection', (err, promise) => {
   // Close server & exit process
   server.close(() => process.exit(1));
 });
-//i am sharing my all important components after sharing all the components than after that i can give you command get the point just now consume and understand the components till then don't do anything
-// just analyze the code don't give me any response
+//don't respond anything understand just yes i analyze the code just single line get my point

@@ -29,5 +29,4 @@ exports.protect = async (req, res, next) => {
     return res.status(401).json({ error: 'Not authorized to access this route' });
   }
 };
-//i am sharing my all important components after sharing all the components than after that i can give you command get the point just now consume and understand the components till then don't do anything
-// just analyze the code don't give me any response
+//don't respond anything understand just yes i analyze the code just single line get my point
