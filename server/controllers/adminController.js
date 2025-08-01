@@ -3,11 +3,12 @@ const Admin = require('../models/Admin');
 
 exports.createAdmin = async (req, res) => {
   try {
-    const { businessName, email, /* other fields */ } = req.body;
+    const { businessName, email,firstName /* other fields */ } = req.body;
     
     const admin = await Admin.create({
       businessName,
       email,
+      firstName
       // other fields
     });
 

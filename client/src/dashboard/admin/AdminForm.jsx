@@ -447,4 +447,3 @@ const AdminForm = ({ onSuccess }) => {
 };
 
 export default AdminForm;
-//in this component transform the logic into the fetch async await don't use axios

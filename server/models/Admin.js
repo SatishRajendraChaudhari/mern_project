@@ -11,6 +11,10 @@ const AdminSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  firstName : {
+    type: String,
+    required : true
+  },
   // Add other fields from your form as needed
   createdAt: {
     type: Date,
