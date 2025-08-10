@@ -1,4 +1,4 @@
-//components/auth/ForgotPassword
+//components/auth/ForgotPassword.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -11,6 +11,7 @@ import {
   Alert
 } from '@mui/material';
 import { LockReset } from '@mui/icons-material';
+import { supabase } from '../../lib/supabase';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -23,27 +24,32 @@ const ForgotPassword = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess(false);
     
     try {
-      const response = await fetch('http://localhost:5000/api/v1/auth/forgotpassword', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
+      // Check if user exists in our users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', email)
+        .single();
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess(true);
-        // Show alert and navigate after 2 seconds
-        setTimeout(() => navigate('/create-new-password', { state: { email } }), 2000);
-      } else {
-        setError(data.error || 'Something went wrong');
+      if (userError || !userData) {
+        setError('User with this email does not exist');
+        setLoading(false);
+        return;
       }
+
+      // If user exists, show success message
+      setSuccess(true);
+      
+      // Navigate to create new password page after 2 seconds
+      setTimeout(() => {
+        navigate('/create-new-password', { state: { email } });
+      }, 2000);
+
     } catch (err) {
-      setError('Failed to connect to server');
+      setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -61,7 +67,7 @@ const ForgotPassword = () => {
         </Typography>
         
         {error && <Alert severity="error" sx={{ mt: 2, width: '100%' }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mt: 2, width: '100%' }}>Email verified successfully!</Alert>}
+        {success && <Alert severity="success" sx={{ mt: 2, width: '100%' }}>User ID is correct! Redirecting...</Alert>}
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, width: '100%' }}>
           <TextField

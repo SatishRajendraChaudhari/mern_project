@@ -1,33 +1,36 @@
-//components/auth/Signup
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Box, 
-  Button, 
-  TextField, 
-  Typography, 
-  Container, 
-  Paper, 
+// components/auth/Signup.js
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Container,
+  Paper,
   InputAdornment,
-  IconButton
-} from '@mui/material';
-import { LockOutlined, Visibility, VisibilityOff } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
+  IconButton,
+} from "@mui/material";
+import { LockOutlined, Visibility, VisibilityOff } from "@mui/icons-material";
+import { Link } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleClickShowPassword = () => setShowPassword(!showPassword);
-  const handleClickShowConfirmPassword = () => setShowConfirmPassword(!showConfirmPassword);
+  const handleClickShowConfirmPassword = () =>
+    setShowConfirmPassword(!showConfirmPassword);
 
   const handleMouseDownPassword = (event) => {
     event.preventDefault();
@@ -37,71 +40,93 @@ const Signup = () => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: value,
     });
   };
 
   const validate = () => {
     const newErrors = {};
-    
-    if (!formData.name) newErrors.name = 'Name is required';
+
+    if (!formData.name) newErrors.name = "Name is required";
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = "Email is invalid";
     }
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
     }
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = "Passwords do not match";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-   const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validate()) {
+      setLoading(true);
       try {
-        const response = await fetch('http://localhost:5000/api/v1/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        // Sign up with Supabase Auth
+        const { data, error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              name: formData.name,
+            },
           },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            password: formData.password
-          }),
         });
 
-        const data = await response.json();
-
-        if (response.ok) {
-          // Store token in localStorage
-          localStorage.setItem('token', data.token);
-          navigate('/login');
+        if (error) {
+          setErrors({ ...errors, form: error.message });
         } else {
-          setErrors({ ...errors, form: data.error });
+          // Show success message
+          // Updated code (correct message):
+          alert("Account created successfully! You can now login.");
+          navigate("/login");
         }
       } catch (err) {
-        setErrors({ ...errors, form: 'Something went wrong. Please try again.' });
+        setErrors({
+          ...errors,
+          form: "Something went wrong. Please try again.",
+        });
+      } finally {
+        setLoading(false);
       }
     }
   };
 
   return (
     <Container component="main" maxWidth="xs">
-      <Paper elevation={3} sx={{ mt: 8, p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <Paper
+        elevation={3}
+        sx={{
+          mt: 8,
+          p: 4,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
         <LockOutlined color="primary" sx={{ fontSize: 40 }} />
         <Typography component="h1" variant="h5" sx={{ mt: 2 }}>
           Sign Up
         </Typography>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, width: '100%' }}>
+        {errors.form && (
+          <Typography color="error" sx={{ mt: 2 }}>
+            {errors.form}
+          </Typography>
+        )}
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ mt: 3, width: "100%" }}
+        >
           <TextField
             margin="normal"
             required
@@ -135,7 +160,7 @@ const Signup = () => {
             fullWidth
             name="password"
             label="Password"
-            type={showPassword ? 'text' : 'password'}
+            type={showPassword ? "text" : "password"}
             id="password"
             autoComplete="new-password"
             value={formData.password}
@@ -154,7 +179,7 @@ const Signup = () => {
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
-              )
+              ),
             }}
           />
           <TextField
@@ -163,7 +188,7 @@ const Signup = () => {
             fullWidth
             name="confirmPassword"
             label="Confirm Password"
-            type={showConfirmPassword ? 'text' : 'password'}
+            type={showConfirmPassword ? "text" : "password"}
             id="confirmPassword"
             value={formData.confirmPassword}
             onChange={handleChange}
@@ -181,7 +206,7 @@ const Signup = () => {
                     {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
-              )
+              ),
             }}
           />
           <Button
@@ -189,10 +214,11 @@ const Signup = () => {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
+            disabled={loading}
           >
-            Sign Up
+            {loading ? "Signing Up..." : "Sign Up"}
           </Button>
-          <Box sx={{ textAlign: 'center' }}>
+          <Box sx={{ textAlign: "center" }}>
             <Link to="/login" variant="body2">
               Already have an account? Sign in
             </Link>

@@ -1,6 +1,6 @@
-//components/auth/Login
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+// components/auth/Login.js
+import React, { useState,useEffect } from "react";
+import { useNavigate,useLocation } from "react-router-dom";
 import {
   Box,
   Button,
@@ -13,6 +13,8 @@ import {
 } from "@mui/material";
 import { LockOutlined, Visibility, VisibilityOff } from "@mui/icons-material";
 import { Link } from "react-router-dom";
+import { supabase } from '../../lib/supabase';
+// import { useLocation,useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -22,7 +24,10 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+const [initialEmail, setInitialEmail] = useState('');
 
   const handleClickShowPassword = () => setShowPassword(!showPassword);
   const handleMouseDownPassword = (event) => {
@@ -58,41 +63,54 @@ const Login = () => {
     setLoginError("");
 
     if (validate()) {
+      setLoading(true);
       try {
-        const response = await fetch(
-          "http://localhost:5000/api/v1/auth/login",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: formData.email,
-              password: formData.password,
-            }),
-          }
-        );
+        // Sign in with Supabase Auth
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
 
-        const data = await response.json(); // <-- Only call this once
-        console.log("API Response:", data); // Add this line
-
-        if (response.ok) {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("role", data.role);
-          localStorage.setItem(
-            "user",
-            JSON.stringify({
-              name: data.name,
-              email: formData.email,
-            })
-          );
-          window.location.href = "/dashboard";
+        if (error) {
+          setLoginError(error.message);
         } else {
-          setLoginError(data.error || "Invalid credentials");
+          // Get additional user data from our custom users table
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+
+          if (userError) {
+            console.log('Error fetching user data:', userError);
+          }
+
+          // Store user session info in localStorage (optional - Supabase handles session automatically)
+          localStorage.setItem('user', JSON.stringify({
+            id: data.user.id,
+            email: data.user.email,
+            name: userData?.name || data.user.user_metadata?.name || 'User',
+            role: userData?.role || 'user'
+          }));
+
+          navigate('/dashboard');
         }
       } catch (err) {
         setLoginError("Something went wrong. Please try again.");
+      } finally {
+        setLoading(false);
       }
     }
   };
+
+  useEffect(() => {
+  if (location.state?.passwordUpdated) {
+    alert('Password updated successfully! Please login with your new password');
+  }
+  if (location.state?.email) {
+    setFormData(prev => ({...prev, email: location.state.email}));
+  }
+}, [location.state]);
 
   return (
     <Container component="main" maxWidth="xs">
@@ -167,8 +185,9 @@ const Login = () => {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
+            disabled={loading}
           >
-            Sign In
+            {loading ? 'Signing In...' : 'Sign In'}
           </Button>
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <Link to="/forgot-password" variant="body2">

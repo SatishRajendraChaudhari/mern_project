@@ -1,4 +1,4 @@
-//components/auth/CreateNewPassword
+//components/auth/CreateNewPassword.js
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -13,66 +13,95 @@ import {
   IconButton
 } from '@mui/material';
 import { Visibility, VisibilityOff, LockReset } from '@mui/icons-material';
-import * as yup from 'yup';
-import { useFormik } from 'formik';
-
-const passwordSchema = yup.object().shape({
-  newPassword: yup.string()
-    .required('Password is required')
-    .min(8, 'Password must be at least 8 characters')
-    .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-      'Password must contain at least one uppercase, one lowercase, one number and one special character'
-    ),
-  confirmPassword: yup.string()
-    .required('Please confirm your password')
-    .oneOf([yup.ref('newPassword'), null], 'Passwords must match')
-});
+import { supabase } from '../../lib/supabase';
 
 const CreateNewPassword = () => {
+  const [formData, setFormData] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [errors, setErrors] = useState({});
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || '';
 
-  const formik = useFormik({
-    initialValues: {
-      newPassword: '',
-      confirmPassword: ''
-    },
-    validationSchema: passwordSchema,
-    onSubmit: async (values) => {
-      try {
-        const response = await fetch('http://localhost:5000/api/v1/auth/resetpassword', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            email,
-            newPassword: values.newPassword 
-          }),
-        });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+  };
 
-        const data = await response.json();
-
-        if (response.ok) {
-          setSuccess(true);
-          setTimeout(() => navigate('/login'), 2000);
-        } else {
-          setError(data.error || 'Failed to reset password');
-        }
-      } catch (err) {
-        setError('Failed to connect to server');
-      }
+  const validate = () => {
+    const newErrors = {};
+    
+    if (!formData.newPassword) {
+      newErrors.newPassword = 'Password is required';
+    } else if (formData.newPassword.length < 6) {
+      newErrors.newPassword = 'Password must be at least 6 characters';
     }
-  });
+    
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (formData.newPassword !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!validate()) return;
+  
+  setLoading(true);
+  setError('');
+  
+  try {
+    // Update password using Supabase's auth.updateUser
+    const { data, error } = await supabase.auth.updateUser({
+      password: formData.newPassword
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    setSuccess(true);
+    
+    // Redirect to login after successful update
+    setTimeout(() => {
+      navigate('/login', { 
+        state: { 
+          email: email,
+          passwordUpdated: true 
+        } 
+      });
+    }, 2000);
+
+  } catch (err) {
+    setError(err.message || 'Failed to update password');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleClickShowPassword = () => setShowPassword(!showPassword);
   const handleClickShowConfirmPassword = () => setShowConfirmPassword(!showConfirmPassword);
+
+  // Redirect to forgot password if no email provided
+  if (!email) {
+    navigate('/forgot-password');
+    return null;
+  }
 
   return (
     <Container component="main" maxWidth="xs">
@@ -81,15 +110,18 @@ const CreateNewPassword = () => {
         <Typography component="h1" variant="h5" sx={{ mt: 2 }}>
           Create New Password
         </Typography>
+        <Typography variant="body2" sx={{ mt: 1, textAlign: 'center', color: 'text.secondary' }}>
+          for {email}
+        </Typography>
         
         {error && <Alert severity="error" sx={{ mt: 2, width: '100%' }}>{error}</Alert>}
         {success && (
           <Alert severity="success" sx={{ mt: 2, width: '100%' }}>
-            Password updated successfully! Redirecting to login...
+            Password updated successfully! Redirecting to dashboard...
           </Alert>
         )}
 
-        <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 3, width: '100%' }}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, width: '100%' }}>
           <TextField
             margin="normal"
             required
@@ -98,11 +130,10 @@ const CreateNewPassword = () => {
             label="New Password"
             type={showPassword ? 'text' : 'password'}
             id="newPassword"
-            value={formik.values.newPassword}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.newPassword && Boolean(formik.errors.newPassword)}
-            helperText={formik.touched.newPassword && formik.errors.newPassword}
+            value={formData.newPassword}
+            onChange={handleChange}
+            error={!!errors.newPassword}
+            helperText={errors.newPassword}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -125,11 +156,10 @@ const CreateNewPassword = () => {
             label="Confirm New Password"
             type={showConfirmPassword ? 'text' : 'password'}
             id="confirmPassword"
-            value={formik.values.confirmPassword}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
-            helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            error={!!errors.confirmPassword}
+            helperText={errors.confirmPassword}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -149,9 +179,9 @@ const CreateNewPassword = () => {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
-            disabled={!formik.isValid || formik.isSubmitting}
+            disabled={loading}
           >
-            {formik.isSubmitting ? 'Updating...' : 'Create New Password'}
+            {loading ? 'Updating...' : 'Create New Password'}
           </Button>
         </Box>
       </Paper>
